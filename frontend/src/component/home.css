@@ -1,0 +1,40 @@
+@keyframes typing {
+    from {
+      width: 0;
+    }
+    to {
+      width: 100%;
+    }
+  }
+  
+  @keyframes blink-caret {
+    0%, 100% {
+      border-color: transparent;
+    }
+    50% {
+      border-color: white;
+    }
+  }
+  
+  @keyframes hide-caret {
+    to {
+      border-right-color: transparent;
+    }
+  }
+  
+  .typing-animation {
+    display: inline-block;
+    white-space: nowrap;
+    overflow: hidden;
+    border-right: 2px solid white;
+    animation: 
+      typing 4s steps(20, end) forwards,
+      blink-caret 0.75s step-end 6;
+  }
+  
+  /* Optional: Disappear caret after a delay (after typing is done) */
+  .typing-animation.done {
+    animation: hide-caret 0.5s ease forwards;
+    animation-delay: 4.5s;
+  }
+  
