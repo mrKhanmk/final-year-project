@@ -29,28 +29,42 @@ def allowed_file(filename):
 @app.route('/home', methods=['GET', 'POST'])
 def home():
     if request.method == 'POST':
+        # Check if an image file is provided
         if 'image' not in request.files:
             return jsonify({"error": "No image file provided"}), 400
         
         file = request.files['image']
-        if file and allowed_file(file.filename):
-            # Save the uploaded file
-            file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+        if not file or not allowed_file(file.filename):
+            return jsonify({"error": f"Invalid file type. Allowed types: {', '.join(ALLOWED_EXTENSIONS)}"}), 400
+
+        # Save the file securely
+        filename = secure_filename(file.filename)
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        try:
             file.save(file_path)
+        except OSError as e:
+            return jsonify({"error": f"Failed to save file: {str(e)}"}), 500
+
+        # Process the file
+        try:
+            food = food_recipe_generator()  # Ensure this function is defined
+            response = food.report(file_path)
+            print(f"response: {response}")
+            clean_data = response.replace("```json", "").replace("```", "").strip()
             
+            # Parse the response
             try:
-                food = food_recipe_generator()
-                response = food.report(file_path)
-                print("response"+response)
-                data = json.loads(response[7:-4])
-                print("data"+data)
-                # return render_template('index.html', form=form, response=response)
-                return jsonify(data)
-            except Exception as e:
-                return jsonify({"error": f"Prediction failed: {str(e)}"}), 500
-        else:
-            return jsonify({"error": "Invalid file type"}), 400
-    return render_template('index.html')
+                data = json.loads(clean_data)  # Adjust parsing if response has specific format
+                print(f"response: {data}")
+                return render_template('index.html', data=data) 
+            except json.JSONDecodeError as e:
+                print(e)
+                return jsonify({"error": f"Failed to parse response: {str(e)}"}), 500
+        except Exception as e:
+            return jsonify({"error": f"Prediction failed: {str(e)}"}), 500
+
+    # Handle GET request
+    return render_template('index.html',data=None)  # Ensure index.html exists
    
 
 @app.route('/', methods=['GET', 'POST'])
